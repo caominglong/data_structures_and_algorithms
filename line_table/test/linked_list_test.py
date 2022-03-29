@@ -19,7 +19,6 @@ def main():
     list.sort_insert()
     list.printall()
 
-
     # list.preappend(4)
     # list.preappend(5)
     # print("print preappend operation")
@@ -60,7 +59,6 @@ def main():
 
 
 def main2():
-
     l1list = L1list()
     l1list.append(1)
     l1list.append(2)
@@ -81,6 +79,7 @@ def main2():
     l1list.pop()
     print("print pop operation")
     l1list.printall()
+
 
 def main3():
     lclist = LClist()
@@ -103,6 +102,7 @@ def main3():
     lclist.pop()
     print("print pop operation")
     lclist.printall()
+
 
 def main4():
     """
@@ -134,6 +134,7 @@ def main4():
     print("print insert operation")
     dllist.printall()
 
+
 def main5():
     """
     双向循环链表的测试
@@ -164,5 +165,76 @@ def main5():
     print("print insert operation")
     dlclist.printall()
 
+
+def main7():
+    # 用数组实现
+    # josephus_A(5, 2, 3)
+    josephus_L(5, 2, 3)
+
+
+def josephus_A(n, k, m):
+    """
+    使用数组的方式解决
+    约瑟夫环问题
+    计算以下函数的时间复杂度：
+    在m=n时，整个计算中，i+1的次数为n2 + logn
+    :param n: 人数
+    :param k: 第几个人开始报数
+    :param m: 报到第几个数的时候，退出
+    :return:
+    """
+    people = list(range(1, n + 1))  # 创建n个人的列表
+    i = k - 1  # 数组的初始下标，从此下标开始报数
+    for k in range(n):
+        count = 0  # 每次循环重新计数
+        # 每次报数到了之后，退出一个人，于是需要循环退出n次
+        while count < m:
+            # 当报的数还没到m的时候，推动people的数组下标往后走
+            # 判断当前元素不等于0，才表示一个人报数
+            if people[i] > 0:
+                count += 1
+            if count == m:
+                print(i)
+                people[i] = 0
+            # 需要考虑列表走到尽头之后，需要重头开始报数
+            i = (i + 1) % n
+
+
+def josephus_L(n, k, m):
+    """
+    用链表来实现约瑟夫环
+    :param n: 人数
+    :param k: 从第几个人开始报数
+    :param m: 报数到几个数时此人退出
+    :return:
+    """
+    people = list(range(1, n + 1))
+    num, i = n, k - 1
+    # while people:
+    #     count = 0
+    #     while count < m:
+    #         count += 1
+    #         if count == m:
+    #             print(people[i])
+    #             # 删掉指定位置的元素
+    #             people.pop(i)
+    #         if people:
+    #             i = (i+1) % len(people)
+    # print(list(range(n, 0, -1)))
+    # for num in range(n, 0, -1):
+    #     i = (i + m - 1) % num
+    #     print(people.pop(i),
+    #           end=("," if num > 1 else "\n"))
+    b = 0
+    aaa = 'kk' if b != 0 else '11'
+    print(aaa)
+    return
+
+def josephus_CL():
+    """
+    基于循环单链表
+    :return:
+    """
+
 if __name__ == '__main__':
-    main()
+    main7()

@@ -191,6 +191,36 @@ class Llist:
             rem = rem.next
             q.next = p
 
+    def sort_insert(self):
+        """
+        将单链表里面的元素按照从小到大排序，使用插入排序方法
+        排序过程：将元素里面的值进行比较并替换
+        总结：1.直接对象赋值的时候，修改对象的元素，所有赋值过的变量都会受影响
+        2.链表进行操作的时候，需要定义一个待操作的链表，供返回结果
+        :return:
+        """
+        p = self._head
+        if p is None or p.next is None:
+            # 如果当前列表为空，或者只有一个元素，那么排序结束
+            return
+        # 开始排序
+        cur_node = self._head.next
+        while cur_node is not None:
+            k = self._head
+            cur_elem = cur_node.elem
+            while k is not cur_node and k.elem <= cur_node.elem:
+                # 这个循环主要是忽略前面已经排好序并且小于cur_node的值（已经不需要比较替换）的一些元素，直接将k定位到需要替换的位置
+                k = k.next
+            while k is not cur_node:
+                # 进行比较替换，将当前需要的比较值替换到k的当前位置处
+                temp_elem = k.elem
+                k.elem = cur_elem
+                cur_elem = temp_elem
+                k = k.next
+            # 回填最后一个元素,因为上面的while循环少了一步填值
+            cur_node.elem = cur_elem
+            cur_node = cur_node.next
+
 
 # 单链表加尾指针 用于改善单链表在操作尾表元素的时间复杂度过高的问题
 class L1list(Llist):
