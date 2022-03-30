@@ -2,7 +2,7 @@ class priorityQueueError(ValueError):
     pass
 
 
-class priorityQueue:
+class PriorityQueue:
     """
     用堆实现的优先队列类
     """
