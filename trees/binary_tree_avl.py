@@ -22,81 +22,142 @@ class BinaryTreeAvlDict(BinarySortTree):
         :param value:
         :return:
         """
-        fixed_root = self._root
+        print("开始插入结点！")
         root = self._root
         if root is None:
-            root = AVLNode(Assoc(key, value))
+            self._root = AVLNode(Assoc(key, value))
             return
         # 树中结点不为空
-        # 首先找到元素要插入的位置
-        parent_node = None
-        left_or_right = 0   # 0代表左边，1代表右边，代表着新插入的元素插入到根结点的哪一边了
-        update_root = None
-        while root is not None:
-            data = root.data
-            if key > data.key:
-                left_or_right = 1
-                update_root = fixed_root.right
-            else:
-                update_root = fixed_root.left
-            break
+        # 关键的三个结点变量，代表的是被插入元素后受影响的那颗子树的三个结点，进行平衡调整，也是需要调整这三个结点的位置关系
+        # 1、parent_node代表的是受影响子树的根结点
+        # 2、leaf_node代表的是还未插入时的受影响子树的叶子结点，可以看做是parent_node的孩子结点
+        # 3、insert_node代表的是被插入的结点
+        parent_node = self._root  # 受影响的子树
+        leaf_node = None
+        insert_node = None  # 被插入点的父结点
+        # 首先找到要插入的位置，并将结点插入当前位置
         while root is not None:
             data = root.data
             if key < data.key:
                 # 往左找
                 if root.left is None:
                     root.left = AVLNode(Assoc(key, value))
-                    # 更新路径上的所有元素的平衡因子
-                    if root.bf != 0:
-                        # 不等于0代表不是叶子结点,这时平衡因子只会响应root结点
-                        root.bf = 0
-                    else:
-                        # 当前已知信息为，插入结点插到了左边的叶子结点
-                        if left_or_right == 0 and fixed_root.bf == 1:
-                            # 表示平衡树左边的高度高1，并且数据插到了根结点的左子树上
-                            while update_root != root:
-                                # 更新从根结点的左子树结点到当前路径上的所有bf
-                                if key < update_root.data.key:
-                                    update_root.bf = 1  # 设置为1，因为左边高度高1，往左边加结点后进行调整，左边维持高度高1
-                                    update_root = update_root.left
-                                else:
-                                    update_root.bf = -1  # 设置为-1，因为左边高度高1，往左边加结点后进行调整，左边维持高度高1
-                                    update_root = update_root.right
-
-                        elif left_or_right == 0 and fixed_root.bf == -1:
-                            # 数据插到了根结点的左子树上，但是平衡树的右子树高度高1，这是平衡树趋向平衡了，将根结点的bf设置为0
-                            fixed_root.bf = 0
-                        elif left_or_right == 1 and fixed_root.bf == 1:
-                            # 数据插到了根结点的右子树上，表示平衡树左边的高度高1，这是平衡树趋向平衡了，将根结点的bf设置为0
-                            fixed_root.bf = 0
-                        elif left_or_right == 1 and fixed_root.bf == -1:
-                            # 数据插到了根结点的右子树上，表示平衡树右边的高度高1
-                            # 表示平衡树左边的高度高1，并且数据插到了根结点的左子树上
-                            while update_root != root:
-                                # 更新从根结点的左子树结点到当前路径上的所有bf
-                                if key < update_root.data.key:
-                                    update_root.bf = 1  # 设置为1，因为左边高度高1，往左边加结点后进行调整，左边维持高度高1
-                                    update_root = update_root.left
-                                else:
-                                    update_root.bf = -1  # 设置为-1，因为左边高度高1，往左边加结点后进行调整，左边维持高度高1
-                                    update_root = update_root.right
-                    self.LL(parent_node, root)
+                    insert_node = root.left
                     break
                 parent_node = root
                 root = root.left
-            if key > data.key:
+            elif key > data.key:
                 # 往右找
                 if root.right is None:
                     root.right = AVLNode(Assoc(key, value))
-                    # 更新路径上的所有元素的平衡因子
+                    insert_node = root.right
                     break
-                    return
+                parent_node = root
+                root = root.right
             else:
+                # 如果存在key相等，将值覆盖后即可退出
                 root.data.value = value
                 return
 
-    def LL(self, parent_node, a):
+        # 得到新插入结点是插入到parent_node的左子树还是右子树
+        update_root = None  # 更新parent_node下到插入结点所经过结点的所有平衡因子bf
+        left_or_right = 1  # 1代表左边，-1代表右边，代表着新插入的元素插入到parent_node的哪一边了
+        while parent_node is not None:
+            data = parent_node.data
+            if key > data.key:
+                left_or_right = -1
+                update_root = parent_node.right
+                leaf_node = parent_node.right
+            else:
+                update_root = parent_node.left
+                leaf_node = parent_node.left
+            break
+
+        # 更新从parent_node的左子树结点到插入点路径上的所有bf
+        while update_root != insert_node:
+            if key < update_root.data.key:
+                update_root.bf = 1  # 设置为1，往左边加结点后进行调整，左边树高1，则bf为1
+                update_root = update_root.left
+            else:
+                update_root.bf = -1  # 设置为-1，往右边加结点后进行调整，右边树高1，则bf为-1
+                update_root = update_root.right
+        # 如果parent_node的平衡因子为0，更新parent_node的平衡因子即可
+        if parent_node.bf == 0:
+            parent_node.bf = left_or_right
+            return
+        if parent_node.bf == -left_or_right:
+            # 新结点插入到了parent_node结点的另一边，那么parent_node趋向平衡
+            parent_node.bf = 0
+            return
+        # 以下是失衡情况
+        if left_or_right == 1 and leaf_node.bf == 1:
+            # 当插入的结点在parent_node的左子树，且leaf_node等于1，代表新结点插入在parent_node的左子树的左子树
+            # LL调整，LL：a的左子树较高，新结点插入在a的左子树的左子树
+            print(f"结点{key}进行了LL调整")
+            self.LL(parent_node, leaf_node)
+        elif left_or_right == -1 and leaf_node.bf == 1:
+            # 数据插到了parent_node的右子树上，且leaf_node的平衡因子为1，代表新结点插入在parent_node的右子树的左子树
+            # RL调整，RL：a的右子树较高，新结点插入在a的右子树的左子树
+            print(f"结点{key}进行了RL调整")
+            self.RL(parent_node, leaf_node)
+        elif left_or_right == 1 and leaf_node.bf == -1:
+            # 数据插到了parent_node的左子树上，且leaf_node的平衡因子为-1，代表新结点插入在parent_node的左子树的右子树
+            # LR调整，LR：a的左子树较高，新结点插入在a的左子树的右子树
+            print(f"结点{key}进行了LR调整")
+            self.LR(parent_node, leaf_node)
+        elif left_or_right == -1 and leaf_node.bf == -1:
+            # 数据插到了parent_node的右子树上，且leaf_node的平衡因子为-1，代表新结点插入在parent_node的右子树的右子树
+            # RR调整，RR：a的右子树较高，新结点插入在a的右子树的右子树
+            print(f"结点{key}进行了RR调整")
+            self.RR(parent_node, leaf_node)
+
+
+    def LL(self, parent_node, leaf_node):
         # a的左子树较高，新结点插入在a的左子树的左子树
         # 进行旋转
-        parent_node.left = None
-        a.right = parent_node
+        parent_node.left = leaf_node.right
+        leaf_node.right = parent_node
+        leaf_node.bf = parent_node.bf = 0
+        return leaf_node
+
+    def RR(self, parent_node, leaf_node):
+        parent_node.right = leaf_node.left
+        leaf_node.left = parent_node
+        parent_node.bf = leaf_node.bf = 0
+        return leaf_node
+
+    def LR(self, parent_node, leaf_node):
+        c = leaf_node.right
+        parent_node.left, leaf_node.left = c.right, c.left
+        c.left, c.right = leaf_node, parent_node
+        if c.bf == 0:
+            # c本身就是插入结点
+            parent_node.bf = leaf_node.bf = 0
+        elif c.bf == 1:
+            # 新结点在c的左子树
+            parent_node.bf = -1
+            leaf_node.bf = 0
+        else:
+            # 新结点在c的右子树
+            parent_node.bf = 0
+            leaf_node.bf = 1
+        c.bf = 0
+        return c
+
+    def RL(self, parent_node, leaf_node):
+        c = leaf_node.left
+        parent_node.right, leaf_node.left = c.left, c.right
+        c.left, c.right = parent_node, leaf_node
+        if c.bf == 0:
+            # c本身就是插入结点
+            parent_node.bf = leaf_node.bf = 0
+        elif c.bf == 1:
+            # 新结点在c的左子树
+            parent_node.bf = 0
+            leaf_node.bf = -1
+        else:
+            # 新结点在c的右子树
+            parent_node.bf = 1
+            leaf_node.bf = 0
+        c.bf = 0
+        return c
