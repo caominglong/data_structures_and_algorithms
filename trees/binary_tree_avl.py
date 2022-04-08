@@ -30,21 +30,28 @@ class BinaryTreeAvlDict(BinarySortTree):
         # 树中结点不为空
         # 关键的三个结点变量，代表的是被插入元素后受影响的那颗子树的三个结点，进行平衡调整，也是需要调整这三个结点的位置关系
         # 1、parent_node代表的是受影响子树的根结点
-        # 2、leaf_node代表的是还未插入时的受影响子树的叶子结点，可以看做是parent_node的孩子结点
+        # 2、subtree_node代表的是还未插入时的受影响子树的叶子结点，可以看做是parent_node的孩子结点
         # 3、insert_node代表的是被插入的结点
+        parent_parent_node = None  # 受影响的子树的父结点
         parent_node = self._root  # 受影响的子树
-        leaf_node = None
+        subtree_node = None
         insert_node = None  # 被插入点的父结点
+        parent_root = None
         # 首先找到要插入的位置，并将结点插入当前位置
+        if key == 56:
+            print("56进来了！")
         while root is not None:
             data = root.data
+            if root.bf != 0:
+                # 得到受影响的子树（最小非平衡子树）与它的父结点
+                parent_parent_node, parent_node = parent_root, root
+            parent_root = root
             if key < data.key:
                 # 往左找
                 if root.left is None:
                     root.left = AVLNode(Assoc(key, value))
                     insert_node = root.left
                     break
-                parent_node = root
                 root = root.left
             elif key > data.key:
                 # 往右找
@@ -52,13 +59,11 @@ class BinaryTreeAvlDict(BinarySortTree):
                     root.right = AVLNode(Assoc(key, value))
                     insert_node = root.right
                     break
-                parent_node = root
                 root = root.right
             else:
                 # 如果存在key相等，将值覆盖后即可退出
                 root.data.value = value
                 return
-
         # 得到新插入结点是插入到parent_node的左子树还是右子树
         update_root = None  # 更新parent_node下到插入结点所经过结点的所有平衡因子bf
         left_or_right = 1  # 1代表左边，-1代表右边，代表着新插入的元素插入到parent_node的哪一边了
@@ -67,10 +72,10 @@ class BinaryTreeAvlDict(BinarySortTree):
             if key > data.key:
                 left_or_right = -1
                 update_root = parent_node.right
-                leaf_node = parent_node.right
+                subtree_node = parent_node.right
             else:
                 update_root = parent_node.left
-                leaf_node = parent_node.left
+                subtree_node = parent_node.left
             break
 
         # 更新从parent_node的左子树结点到插入点路径上的所有bf
@@ -90,74 +95,85 @@ class BinaryTreeAvlDict(BinarySortTree):
             parent_node.bf = 0
             return
         # 以下是失衡情况
-        if left_or_right == 1 and leaf_node.bf == 1:
-            # 当插入的结点在parent_node的左子树，且leaf_node等于1，代表新结点插入在parent_node的左子树的左子树
+        adjust_tree = None
+        if left_or_right == 1 and subtree_node.bf == 1:
+            # 当插入的结点在parent_node的左子树，且subtree_node等于1，代表新结点插入在parent_node的左子树的左子树
             # LL调整，LL：a的左子树较高，新结点插入在a的左子树的左子树
             print(f"结点{key}进行了LL调整")
-            self.LL(parent_node, leaf_node)
-        elif left_or_right == -1 and leaf_node.bf == 1:
-            # 数据插到了parent_node的右子树上，且leaf_node的平衡因子为1，代表新结点插入在parent_node的右子树的左子树
+            adjust_tree = self.LL(parent_node, subtree_node)
+        elif left_or_right == -1 and subtree_node.bf == 1:
+            # 数据插到了parent_node的右子树上，且subtree_node的平衡因子为1，代表新结点插入在parent_node的右子树的左子树
             # RL调整，RL：a的右子树较高，新结点插入在a的右子树的左子树
             print(f"结点{key}进行了RL调整")
-            self.RL(parent_node, leaf_node)
-        elif left_or_right == 1 and leaf_node.bf == -1:
-            # 数据插到了parent_node的左子树上，且leaf_node的平衡因子为-1，代表新结点插入在parent_node的左子树的右子树
+            adjust_tree = self.RL(parent_node, subtree_node)
+        elif left_or_right == 1 and subtree_node.bf == -1:
+            # 数据插到了parent_node的左子树上，且subtree_node的平衡因子为-1，代表新结点插入在parent_node的左子树的右子树
             # LR调整，LR：a的左子树较高，新结点插入在a的左子树的右子树
             print(f"结点{key}进行了LR调整")
-            self.LR(parent_node, leaf_node)
-        elif left_or_right == -1 and leaf_node.bf == -1:
-            # 数据插到了parent_node的右子树上，且leaf_node的平衡因子为-1，代表新结点插入在parent_node的右子树的右子树
+            adjust_tree = self.LR(parent_node, subtree_node)
+        elif left_or_right == -1 and subtree_node.bf == -1:
+            # 数据插到了parent_node的右子树上，且subtree_node的平衡因子为-1，代表新结点插入在parent_node的右子树的右子树
             # RR调整，RR：a的右子树较高，新结点插入在a的右子树的右子树
             print(f"结点{key}进行了RR调整")
-            self.RR(parent_node, leaf_node)
+            adjust_tree = self.RR(parent_node, subtree_node)
+
+        # 将调整后的子树给嫁接上
+        if parent_parent_node is None:
+            # 代表parent_node为平衡树的根结点
+            self._root = adjust_tree
+        else:
+            if parent_parent_node.left == parent_node:
+                parent_parent_node.left = adjust_tree
+            else:
+                parent_parent_node.right = adjust_tree
 
 
-    def LL(self, parent_node, leaf_node):
+    def LL(self, parent_node, subtree_node):
         # a的左子树较高，新结点插入在a的左子树的左子树
         # 进行旋转
-        parent_node.left = leaf_node.right
-        leaf_node.right = parent_node
-        leaf_node.bf = parent_node.bf = 0
-        return leaf_node
+        parent_node.left = subtree_node.right
+        subtree_node.right = parent_node
+        subtree_node.bf = parent_node.bf = 0
+        return subtree_node
 
-    def RR(self, parent_node, leaf_node):
-        parent_node.right = leaf_node.left
-        leaf_node.left = parent_node
-        parent_node.bf = leaf_node.bf = 0
-        return leaf_node
+    def RR(self, parent_node, subtree_node):
+        parent_node.right = subtree_node.left
+        subtree_node.left = parent_node
+        parent_node.bf = subtree_node.bf = 0
+        return subtree_node
 
-    def LR(self, parent_node, leaf_node):
-        c = leaf_node.right
-        parent_node.left, leaf_node.left = c.right, c.left
-        c.left, c.right = leaf_node, parent_node
+    def LR(self, parent_node, subtree_node):
+        c = subtree_node.right
+        parent_node.left, subtree_node.right = c.right, c.left
+        c.left, c.right = subtree_node, parent_node
         if c.bf == 0:
             # c本身就是插入结点
-            parent_node.bf = leaf_node.bf = 0
+            parent_node.bf = subtree_node.bf = 0
         elif c.bf == 1:
             # 新结点在c的左子树
             parent_node.bf = -1
-            leaf_node.bf = 0
+            subtree_node.bf = 0
         else:
             # 新结点在c的右子树
             parent_node.bf = 0
-            leaf_node.bf = 1
+            subtree_node.bf = 1
         c.bf = 0
         return c
 
-    def RL(self, parent_node, leaf_node):
-        c = leaf_node.left
-        parent_node.right, leaf_node.left = c.left, c.right
-        c.left, c.right = parent_node, leaf_node
+    def RL(self, parent_node, subtree_node):
+        c = subtree_node.left
+        parent_node.right, subtree_node.left = c.left, c.right
+        c.left, c.right = parent_node, subtree_node
         if c.bf == 0:
             # c本身就是插入结点
-            parent_node.bf = leaf_node.bf = 0
+            parent_node.bf = subtree_node.bf = 0
         elif c.bf == 1:
             # 新结点在c的左子树
             parent_node.bf = 0
-            leaf_node.bf = -1
+            subtree_node.bf = -1
         else:
             # 新结点在c的右子树
             parent_node.bf = 1
-            leaf_node.bf = 0
+            subtree_node.bf = 0
         c.bf = 0
         return c

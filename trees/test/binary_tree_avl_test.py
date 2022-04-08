@@ -12,6 +12,7 @@ def main():
     binaryTreeAvlDict.insert(81, 81)
     binaryTreeAvlDict.insert(63, 63)
     binaryTreeAvlDict.insert(60, 60)
+    binaryTreeAvlDict.insert(56, 56)
 
 
 if __name__ == '__main__':
